@@ -161,6 +161,19 @@ RSpec.describe RbPager do
             expect(meta[:prev_cursor]).to eql prev_cursor
             expect(meta[:next_cursor]).to eql no_cursor
           end
+
+          it 'returns the correct records' do
+            first_record = Employee.find(10)
+            prev = Base64.strict_encode64("id:#{first_record.id}")
+
+            records, meta = Employee.pager(before: prev, limit: 2, sort: 'id')
+            prev_cursor = Base64.strict_encode64("id:8")
+            next_cursor = Base64.strict_encode64("id:9")
+
+            expect(records.to_a).to eql Employee.where('id in (:recs)', recs: Employee.select(:id).where('id < ?', first_record.id).order(id: :desc).limit(2)).order(:id).to_a
+            expect(meta[:prev_cursor]).to eql prev_cursor
+            expect(meta[:next_cursor]).to eql next_cursor
+          end
         end
 
         context 'with cursor id order by desc' do
